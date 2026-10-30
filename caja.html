@@ -74,7 +74,7 @@ body {
 .panel h1 { margin: 0; font: 800 26px/1.1 var(--font-display); letter-spacing: -.01em; }
 .field { display: grid; gap: 6px; min-width: 0; }
 .field label { font: 500 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-input[type="text"], input[type="password"], input[type="search"] {
+input[type="text"], input[type="password"], input[type="search"], select {
   font: 400 18px var(--font-body);
   min-height: 52px; width: 100%; box-sizing: border-box;
   border: 1.5px solid var(--line); border-radius: 10px; padding: 0 12px;
@@ -113,13 +113,37 @@ input[type="text"], input[type="password"], input[type="search"] {
 .status { min-height: 1.3em; margin: 0; font-size: 15px; font-weight: 700; }
 .status.ok { color: var(--ok); }
 .status.bad { color: var(--danger); }
+
+.top-btns { display: flex; gap: 8px; }
+#s-pin-ok:empty { display: none; }
+.panel h2 { margin: 0; font: 800 18px/1.2 var(--font-display); }
+.legend { font: 500 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.swatches { display: flex; flex-wrap: wrap; gap: 12px; }
+.swatch {
+  width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; background: var(--c); padding: 0;
+  box-shadow: inset 0 0 0 2px rgba(128, 128, 128, .45);
+}
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--fg); }
+.swatch:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+.iconopt {
+  width: 52px; height: 52px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--bg); color: var(--fg);
+  cursor: pointer; padding: 0; display: grid; place-items: center; font: 700 17px var(--font-body);
+}
+.iconopt:hover { border-color: var(--muted); }
+.iconopt[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--fg); }
+.iconopt:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+.sep { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+.card .grid { padding-bottom: 4px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top">
-    <span class="eyebrow">Caja · Crema Mokaapeh</span>
-    <button class="btn btn-secondary btn-small" id="salir" type="button" hidden>Salir</button>
+    <span class="eyebrow" id="eyebrow">Caja · Crema Mokaapeh</span>
+    <div class="top-btns">
+      <button class="btn btn-secondary btn-small" id="ajustes-btn" type="button" hidden>Personalizar</button>
+      <button class="btn btn-secondary btn-small" id="salir" type="button" hidden>Salir</button>
+    </div>
   </div>
 
   <section class="panel" id="a-login">
@@ -161,11 +185,87 @@ input[type="text"], input[type="password"], input[type="search"] {
         <button class="btn btn-primary" id="b-sellar" type="button">Añadir sello</button>
         <button class="btn btn-primary" id="b-canjear" type="button" hidden>Canjear premio</button>
         <button class="btn btn-secondary" id="b-quitar" type="button">Quitar sello</button>
+        <button class="btn btn-secondary" id="b-editar" type="button">Corregir datos del cliente</button>
         <button class="btn btn-secondary" id="b-otro" type="button">Buscar otro cliente</button>
       </div>
+      <form class="panel" id="editform" hidden novalidate>
+        <h2>Corregir datos</h2>
+        <div class="field">
+          <label for="e-nombre">Nombre</label>
+          <input id="e-nombre" type="text" maxlength="30" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="e-apellido">Apellido</label>
+          <input id="e-apellido" type="text" maxlength="30" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="e-tel">Teléfono</label>
+          <input id="e-tel" type="text" inputmode="tel" maxlength="20" autocomplete="off">
+        </div>
+        <p class="err" id="e-err" role="alert"></p>
+        <button class="btn btn-primary" id="e-guardar" type="submit">Guardar cambios</button>
+        <button class="btn btn-secondary" id="e-cancelar" type="button">Cancelar</button>
+      </form>
     </section>
 
     <p class="status" id="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <section id="a-ajustes" hidden style="display:grid;gap:16px">
+    <div class="card" id="s-prev" aria-label="Vista previa de la tarjeta">
+      <div class="card-head"><h2 class="who" id="p-nombre"></h2></div>
+      <div class="grid" id="p-grid"></div>
+      <div class="resumen">
+        <b id="p-premio"></b>
+        <span>Así verán la tarjeta tus clientes</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Personalizar tarjeta</h2>
+      <div class="field">
+        <label for="s-negocio">Nombre del negocio</label>
+        <input id="s-negocio" type="text" maxlength="28" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="s-premio">Premio</label>
+        <input id="s-premio" type="text" maxlength="40" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="s-total">Sellos para el premio</label>
+        <select id="s-total"></select>
+      </div>
+      <div class="field">
+        <span class="legend" id="lg-color">Color de los sellos</span>
+        <div class="swatches" id="s-colores" role="group" aria-labelledby="lg-color"></div>
+      </div>
+      <div class="field">
+        <span class="legend" id="lg-tema">Color de la tarjeta</span>
+        <div class="swatches" id="s-temas" role="group" aria-labelledby="lg-tema"></div>
+      </div>
+      <div class="field">
+        <span class="legend" id="lg-icono">Logo del sello</span>
+        <div class="swatches" id="s-iconos" role="group" aria-labelledby="lg-icono"></div>
+      </div>
+      <div class="field">
+        <label for="s-letra">Letra del sello (si eliges Inicial)</label>
+        <input id="s-letra" type="text" maxlength="1" autocomplete="off" style="max-width:96px;text-align:center">
+      </div>
+      <p class="err" id="s-err" role="alert"></p>
+      <button class="btn btn-primary" id="s-guardar" type="button">Guardar cambios</button>
+      <button class="btn btn-secondary" id="s-volver" type="button">Volver sin guardar</button>
+    </div>
+
+    <div class="panel">
+      <h2>Cambiar PIN de caja</h2>
+      <div class="field">
+        <label for="s-pin">PIN nuevo (4 a 6 números)</label>
+        <input id="s-pin" type="text" inputmode="numeric" maxlength="6" autocomplete="off">
+      </div>
+      <p class="err" id="s-pin-err" role="alert"></p>
+      <p class="status ok" id="s-pin-ok" role="status"></p>
+      <button class="btn btn-secondary" id="s-pin-btn" type="button">Cambiar PIN</button>
+    </div>
   </section>
 </div>
 
@@ -180,6 +280,31 @@ input[type="text"], input[type="password"], input[type="search"] {
   var seq = 0;
   var qTimer = null;
   var statusTimer = null;
+  var conf = { negocio: 'Crema Mokaapeh', premio: '1 crema de 15 onzas', total: 6, color: '#F5B335', tema: 'azul', icono: 'inicial', letra: 'M' };
+  var SV = '<svg viewBox="0 0 24 24" width="58%" height="58%" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  var ICONS = {
+    grano: SV + '<ellipse cx="12" cy="12" rx="6.3" ry="9" transform="rotate(35 12 12)"/><path d="M16.9 5.2c-3.3 2.5-.5 5.2-2.7 7.3-1.7 1.6-2.6 3.1-1.6 6.2"/></svg>',
+    mancha: SV + '<path d="M15.8 6.6A7.6 7.6 0 1 0 18.5 15.4"/><path d="M12.6 9.6A4.4 4.4 0 1 0 15.3 14"/><circle cx="19.4" cy="8.3" r="1.15"/><circle cx="21" cy="11.9" r=".7"/><circle cx="18.6" cy="4.9" r=".6"/></svg>',
+    taza: SV + '<path d="M5 10h11v4.5a4.5 4.5 0 0 1-4.5 4.5h-2A4.5 4.5 0 0 1 5 14.5z"/><path d="M16 11.2h1.6a2.4 2.4 0 0 1 0 4.8h-1.8"/><path d="M8.4 3.6c-.9 1.1.9 2 0 3.2M12 3.6c-.9 1.1.9 2 0 3.2"/><path d="M4 21.2h13"/></svg>',
+    estrella: SV + '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>'
+  };
+  var ICON_OPTS = [['inicial', 'Inicial del negocio'], ['grano', 'Grano de café'], ['mancha', 'Mancha de taza'], ['taza', 'Taza'], ['estrella', 'Estrella']];
+  function fillStamp(el, c) {
+    var svg = ICONS[c.icono];
+    if (svg) el.innerHTML = svg;
+    else el.textContent = String(c.letra || (c.negocio || 'M').charAt(0)).toUpperCase();
+  }
+  var draft = null;
+  var THEMES = {
+    azul: null,
+    espresso: { '--card': '#2A1C14', '--card-muted': '#BFAE9E', '--slot-line': '#6B5242' },
+    bosque: { '--card': '#14301F', '--card-muted': '#A9C4B1', '--slot-line': '#3F6B50' },
+    vino: { '--card': '#34121F', '--card-muted': '#D2AEBC', '--slot-line': '#7A3A55' },
+    grafito: { '--card': '#20242B', '--card-muted': '#B2B8C2', '--slot-line': '#4C5562' }
+  };
+  var THEME_VARS = ['--card', '--card-muted', '--slot-line'];
+  var COLORES = [['Azafrán', '#F5B335'], ['Coral', '#FF7A59'], ['Menta', '#4FD1A5'], ['Cielo', '#5BB5F5'], ['Rosa', '#F28DB2'], ['Lima', '#C5E063']];
+  var TEMAS = [['azul', 'Azul noche', '#172033'], ['espresso', 'Espresso', '#2A1C14'], ['bosque', 'Bosque', '#14301F'], ['vino', 'Vino', '#34121F'], ['grafito', 'Grafito', '#20242B']];
 
   function $(id) { return document.getElementById(id); }
   function configured() { return /^https:\/\/script\.google\.com\//.test(API); }
@@ -216,6 +341,9 @@ input[type="text"], input[type="password"], input[type="search"] {
     $('a-login').hidden = on;
     $('a-main').hidden = !on;
     $('salir').hidden = !on;
+    $('ajustes-btn').hidden = !on;
+    if (!on) { $('a-ajustes').hidden = true; $('editform').hidden = true; }
+    if (on) loadConf();
   }
   function logout(msg) {
     pin = ''; sel = null; storePin('');
@@ -229,7 +357,7 @@ input[type="text"], input[type="password"], input[type="search"] {
   }
 
   function renderDetail() {
-    var c = sel, total = c.total || 6;
+    var c = sel, total = c.total || conf.total || 6;
     $('d-nombre').textContent = c.nombre + ' ' + c.apellido;
     $('d-tel').textContent = telTxt(c.telefono);
     $('d-num').textContent = 'N.º ' + c.numero;
@@ -238,7 +366,7 @@ input[type="text"], input[type="password"], input[type="search"] {
     grid.textContent = '';
     for (var i = 0; i < total; i++) {
       var slot = document.createElement('div');
-      if (i < c.sellos) { slot.className = 'slot filled'; slot.textContent = 'M'; }
+      if (i < c.sellos) { slot.className = 'slot filled'; fillStamp(slot, conf); }
       else { slot.className = 'slot empty'; slot.textContent = String(i + 1); }
       grid.appendChild(slot);
     }
@@ -249,12 +377,13 @@ input[type="text"], input[type="password"], input[type="search"] {
     $('b-sellar').hidden = completa;
     $('b-canjear').hidden = !completa;
     $('b-quitar').disabled = c.sellos === 0;
+    $('editform').hidden = true;
     $('detail').hidden = false;
   }
 
   function setBusy(on) {
     busy = on;
-    ['b-sellar', 'b-canjear', 'b-quitar', 'b-otro'].forEach(function (id) { $(id).disabled = on || (id === 'b-quitar' && sel && sel.sellos === 0); });
+    ['b-sellar', 'b-canjear', 'b-quitar', 'b-editar', 'b-otro'].forEach(function (id) { $(id).disabled = on || (id === 'b-quitar' && sel && sel.sellos === 0); });
   }
 
   function act(accion, okMsg) {
@@ -369,6 +498,216 @@ input[type="text"], input[type="password"], input[type="search"] {
     $('hint').textContent = 'Escribe al menos 3 letras o números.';
   });
   $('salir').addEventListener('click', function () { logout(''); });
+
+  /* ---------- Colores y ajustes ---------- */
+  function paint(el, tema, color) {
+    THEME_VARS.forEach(function (v) { el.style.removeProperty(v); });
+    var t = THEMES[tema];
+    if (t) Object.keys(t).forEach(function (k) { el.style.setProperty(k, t[k]); });
+    el.style.setProperty('--stamp', color);
+  }
+  function paintRoot() {
+    paint(document.documentElement, conf.tema, conf.color);
+    $('eyebrow').textContent = 'Caja · ' + conf.negocio;
+  }
+  function loadConf() {
+    api({ accion: 'config' }).then(function (r) {
+      if (r && r.ok && r.config) {
+        conf = r.config;
+        paintRoot();
+        if (sel) { sel.total = conf.total; renderDetail(); }
+      }
+    }, function () {});
+  }
+
+  function gridCols(n) { return n <= 6 ? 3 : n <= 8 ? 4 : n <= 10 ? 5 : 6; }
+  function renderPreview() {
+    paint($('s-prev'), draft.tema, draft.color);
+    var nombre = draft.negocio.trim() || 'Tu negocio';
+    $('p-nombre').textContent = nombre;
+    $('p-premio').textContent = draft.premio.trim() || 'Tu premio';
+    var g = $('p-grid');
+    g.textContent = '';
+    g.style.setProperty('--cols', gridCols(draft.total));
+    for (var i = 0; i < draft.total; i++) {
+      var s = document.createElement('div');
+      if (i < 2) { s.className = 'slot filled'; fillStamp(s, { negocio: nombre, icono: draft.icono, letra: draft.letra }); }
+      else { s.className = 'slot empty'; s.textContent = String(i + 1); }
+      g.appendChild(s);
+    }
+  }
+  function buildSwatches(box, items, current, onPick) {
+    box.textContent = '';
+    items.forEach(function (it) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'swatch';
+      b.style.setProperty('--c', it.c);
+      b.setAttribute('aria-label', it.name);
+      b.setAttribute('aria-pressed', it.key === current ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        Array.prototype.forEach.call(box.children, function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        onPick(it.key);
+        renderPreview();
+      });
+      box.appendChild(b);
+    });
+  }
+  function buildIcons(box, current, onPick) {
+    box.textContent = '';
+    ICON_OPTS.forEach(function (o) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'iconopt';
+      b.setAttribute('aria-label', o[1]);
+      b.setAttribute('aria-pressed', o[0] === current ? 'true' : 'false');
+      if (ICONS[o[0]]) b.innerHTML = ICONS[o[0]]; else b.textContent = 'Aa';
+      b.addEventListener('click', function () {
+        Array.prototype.forEach.call(box.children, function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        onPick(o[0]);
+        renderPreview();
+      });
+      box.appendChild(b);
+    });
+  }
+  function openSettings() {
+    draft = { negocio: conf.negocio, premio: conf.premio, total: conf.total, color: conf.color, tema: conf.tema, icono: conf.icono || 'inicial', letra: conf.letra || 'M' };
+    $('s-negocio').value = draft.negocio;
+    $('s-premio').value = draft.premio;
+    $('s-letra').value = draft.letra;
+    var sel2 = $('s-total');
+    if (!sel2.children.length) {
+      for (var n = 3; n <= 12; n++) {
+        var o = document.createElement('option');
+        o.value = String(n);
+        o.textContent = n + ' sellos';
+        sel2.appendChild(o);
+      }
+    }
+    sel2.value = String(draft.total);
+    buildSwatches($('s-colores'), COLORES.map(function (c) { return { key: c[1], name: c[0], c: c[1] }; }), draft.color, function (k) { draft.color = k; });
+    buildSwatches($('s-temas'), TEMAS.map(function (t) { return { key: t[0], name: t[1], c: t[2] }; }), draft.tema, function (k) { draft.tema = k; });
+    buildIcons($('s-iconos'), draft.icono, function (k) { draft.icono = k; });
+    $('s-err').textContent = '';
+    $('s-pin-err').textContent = '';
+    $('s-pin-ok').textContent = '';
+    $('s-pin').value = '';
+    $('a-main').hidden = true;
+    $('a-ajustes').hidden = false;
+    renderPreview();
+  }
+  function closeSettings() {
+    $('a-ajustes').hidden = true;
+    $('a-main').hidden = false;
+  }
+
+  $('ajustes-btn').addEventListener('click', function () {
+    if ($('a-ajustes').hidden) openSettings(); else closeSettings();
+  });
+  $('s-volver').addEventListener('click', closeSettings);
+  $('s-negocio').addEventListener('input', function (e) { draft.negocio = e.target.value; renderPreview(); });
+  $('s-premio').addEventListener('input', function (e) { draft.premio = e.target.value; renderPreview(); });
+  $('s-letra').addEventListener('input', function (e) { draft.letra = e.target.value.trim().slice(0, 1).toUpperCase() || conf.letra || 'M'; renderPreview(); });
+  $('s-total').addEventListener('change', function (e) { draft.total = parseInt(e.target.value, 10); renderPreview(); });
+
+  $('s-guardar').addEventListener('click', function () {
+    if (busy) return;
+    var d = {
+      negocio: $('s-negocio').value.trim(),
+      premio: $('s-premio').value.trim(),
+      total: parseInt($('s-total').value, 10)
+    };
+    if (d.negocio.length < 2) { $('s-err').textContent = 'Escribe el nombre del negocio.'; return; }
+    if (d.premio.length < 2) { $('s-err').textContent = 'Escribe cuál es el premio.'; return; }
+    $('s-err').textContent = '';
+    busy = true;
+    $('s-guardar').disabled = true;
+    api({ accion: 'guardarAjustes', pin: pin, negocio: d.negocio, premio: d.premio, total: d.total, color: draft.color, tema: draft.tema, icono: draft.icono, letra: $('s-letra').value.trim() || conf.letra || 'M' }).then(function (r) {
+      busy = false;
+      $('s-guardar').disabled = false;
+      if (!r.ok) {
+        if (r.pinMalo) { logout(r.error); return; }
+        $('s-err').textContent = r.error || 'No se pudo guardar.';
+        return;
+      }
+      conf = r.config;
+      paintRoot();
+      if (sel) sel.total = conf.total;
+      closeSettings();
+      if (sel) renderDetail();
+      say('Cambios guardados. Tus clientes los verán al actualizar su tarjeta.', 'ok');
+    }, function () {
+      busy = false;
+      $('s-guardar').disabled = false;
+      $('s-err').textContent = 'Sin conexión. No se guardó, inténtalo de nuevo.';
+    });
+  });
+
+  $('s-pin-btn').addEventListener('click', function () {
+    if (busy) return;
+    var nuevo = $('s-pin').value.trim();
+    $('s-pin-ok').textContent = '';
+    if (!/^\d{4,6}$/.test(nuevo)) { $('s-pin-err').textContent = 'El PIN nuevo debe tener de 4 a 6 números.'; return; }
+    $('s-pin-err').textContent = '';
+    busy = true;
+    api({ accion: 'cambiarPin', pin: pin, nuevoPin: nuevo }).then(function (r) {
+      busy = false;
+      if (!r.ok) {
+        if (r.pinMalo) { logout(r.error); return; }
+        $('s-pin-err').textContent = r.error || 'No se pudo cambiar el PIN.';
+        return;
+      }
+      pin = nuevo;
+      storePin(nuevo);
+      $('s-pin').value = '';
+      $('s-pin-ok').textContent = 'PIN cambiado. Anótalo en un lugar seguro.';
+    }, function () {
+      busy = false;
+      $('s-pin-err').textContent = 'Sin conexión. Inténtalo de nuevo.';
+    });
+  });
+
+  /* ---------- Corregir datos del cliente ---------- */
+  $('b-editar').addEventListener('click', function () {
+    if (!sel) return;
+    var t = String(sel.telefono);
+    $('e-nombre').value = sel.nombre;
+    $('e-apellido').value = sel.apellido;
+    $('e-tel').value = t.length === 11 && t.indexOf('504') === 0 ? t.slice(3) : t;
+    $('e-err').textContent = '';
+    $('editform').hidden = false;
+    $('e-nombre').focus();
+  });
+  $('e-cancelar').addEventListener('click', function () { $('editform').hidden = true; });
+  $('editform').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (busy || !sel) return;
+    var nombre = $('e-nombre').value.trim();
+    var apellido = $('e-apellido').value.trim();
+    var nuevo = $('e-tel').value.trim();
+    if (nombre.length < 2 || apellido.length < 2) { $('e-err').textContent = 'Escribe el nombre y el apellido.'; return; }
+    if (nuevo.replace(/\D/g, '').length < 8) { $('e-err').textContent = 'Escribe un teléfono de 8 dígitos.'; return; }
+    $('e-err').textContent = '';
+    busy = true;
+    $('e-guardar').disabled = true;
+    api({ accion: 'editar', pin: pin, telefono: sel.telefono, nombre: nombre, apellido: apellido, nuevoTelefono: nuevo }).then(function (r) {
+      busy = false;
+      $('e-guardar').disabled = false;
+      if (!r.ok) {
+        if (r.pinMalo) { logout(r.error); return; }
+        $('e-err').textContent = r.error || 'No se pudo guardar.';
+        return;
+      }
+      var cambioTel = r.cliente.telefono !== sel.telefono;
+      sel = r.cliente;
+      renderDetail();
+      say(cambioTel ? 'Datos corregidos. Dile al cliente que use el teléfono nuevo para recuperar su tarjeta.' : 'Datos corregidos.', 'ok');
+    }, function () {
+      busy = false;
+      $('e-guardar').disabled = false;
+      $('e-err').textContent = 'Sin conexión. No se guardó, inténtalo de nuevo.';
+    });
+  });
 
   if (!configured()) {
     $('login-err').textContent = 'Falta conectar con Google. Revisa el archivo config.js.';

@@ -147,7 +147,7 @@ input[type="text"], input[type="tel"] {
 
   <section class="panel" id="v-form" hidden>
     <h1>Crea tu tarjeta</h1>
-    <p class="lead">Regístrate y recibe un sello de cortesía en tu primera compra de Crema Mokaapeh.</p>
+    <p class="lead" id="lead">Regístrate y recibe un sello de cortesía en tu primera compra de Crema Mokaapeh.</p>
     <form id="form" novalidate style="display:grid;gap:16px">
       <div class="field">
         <label for="f-nombre">Nombre</label>
@@ -178,7 +178,7 @@ input[type="text"], input[type="tel"] {
     <div class="card" aria-label="Tu tarjeta de sellos">
       <div class="card-head">
         <div style="min-width:0">
-          <h1 class="biz">Crema Mokaapeh</h1>
+          <h1 class="biz" id="biz">Crema Mokaapeh</h1>
           <p class="holder" id="holder"></p>
         </div>
         <span class="num" id="num"></span>
@@ -209,8 +209,28 @@ input[type="text"], input[type="tel"] {
 (function () {
   var API = window.MOKAAPEH_API || '';
   var KEY = 'mokaapeh-cliente-v2';
-  var REWARD = '1 crema de 15 onzas';
-  var LETTER = 'M';
+  // Valores iniciales; los reales llegan desde Google (se cambian en la página de caja).
+  var conf = { negocio: 'Crema Mokaapeh', premio: '1 crema de 15 onzas', total: 6, color: '#F5B335', tema: 'azul', icono: 'inicial', letra: 'M' };
+  var SV = '<svg viewBox="0 0 24 24" width="58%" height="58%" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  var ICONS = {
+    grano: SV + '<ellipse cx="12" cy="12" rx="6.3" ry="9" transform="rotate(35 12 12)"/><path d="M16.9 5.2c-3.3 2.5-.5 5.2-2.7 7.3-1.7 1.6-2.6 3.1-1.6 6.2"/></svg>',
+    mancha: SV + '<path d="M15.8 6.6A7.6 7.6 0 1 0 18.5 15.4"/><path d="M12.6 9.6A4.4 4.4 0 1 0 15.3 14"/><circle cx="19.4" cy="8.3" r="1.15"/><circle cx="21" cy="11.9" r=".7"/><circle cx="18.6" cy="4.9" r=".6"/></svg>',
+    taza: SV + '<path d="M5 10h11v4.5a4.5 4.5 0 0 1-4.5 4.5h-2A4.5 4.5 0 0 1 5 14.5z"/><path d="M16 11.2h1.6a2.4 2.4 0 0 1 0 4.8h-1.8"/><path d="M8.4 3.6c-.9 1.1.9 2 0 3.2M12 3.6c-.9 1.1.9 2 0 3.2"/><path d="M4 21.2h13"/></svg>',
+    estrella: SV + '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>'
+  };
+  function fillStamp(el, c) {
+    var svg = ICONS[c.icono];
+    if (svg) el.innerHTML = svg;
+    else el.textContent = String(c.letra || (c.negocio || 'M').charAt(0)).toUpperCase();
+  }
+  var THEMES = {
+    azul: null,
+    espresso: { '--card': '#2A1C14', '--card-muted': '#BFAE9E', '--slot-line': '#6B5242' },
+    bosque: { '--card': '#14301F', '--card-muted': '#A9C4B1', '--slot-line': '#3F6B50' },
+    vino: { '--card': '#34121F', '--card-muted': '#D2AEBC', '--slot-line': '#7A3A55' },
+    grafito: { '--card': '#20242B', '--card-muted': '#B2B8C2', '--slot-line': '#4C5562' }
+  };
+  var THEME_VARS = ['--card', '--card-muted', '--slot-line'];
 
   var cli = null;      // datos de la tarjeta que se muestra
   var tel = '';        // teléfono con el que se reconoce al cliente
@@ -225,7 +245,7 @@ input[type="text"], input[type="tel"] {
     try { var r = localStorage.getItem(KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; }
   }
   function writeStore() {
-    try { localStorage.setItem(KEY, JSON.stringify({ tel: tel, cliente: cli })); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify({ tel: tel, cliente: cli, config: conf })); } catch (e) {}
   }
   function clearStore() {
     try { localStorage.removeItem(KEY); } catch (e) {}
@@ -252,8 +272,24 @@ input[type="text"], input[type="tel"] {
     try { return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' }).replace('.', ''); } catch (e) { return ''; }
   }
 
+  /** Aplica el nombre, premio, número de sellos y colores que se eligieron en caja. */
+  function applyConfig(c) {
+    if (!c || !c.negocio) return;
+    var changed = JSON.stringify(c) !== JSON.stringify(conf);
+    conf = c;
+    var root = document.documentElement;
+    root.style.setProperty('--stamp', c.color);
+    THEME_VARS.forEach(function (v) { root.style.removeProperty(v); });
+    var t = THEMES[c.tema];
+    if (t) Object.keys(t).forEach(function (k) { root.style.setProperty(k, t[k]); });
+    $('biz').textContent = c.negocio;
+    $('lead').textContent = 'Regístrate y recibe un sello de cortesía en tu primera compra de ' + c.negocio + '.';
+    document.title = 'Tarjeta ' + c.negocio;
+    if (changed && cli) render();
+  }
+
   function render() {
-    var total = cli.total || 6, got = cli.sellos;
+    var total = cli.total || conf.total, got = cli.sellos;
     $('holder').textContent = cli.nombre + ' ' + cli.apellido;
     $('num').textContent = 'N.º ' + cli.numero;
     var grid = $('grid');
@@ -268,7 +304,7 @@ input[type="text"], input[type="tel"] {
       if (i < got) {
         slot.className = 'slot filled' + (popFrom >= 0 && i >= popFrom ? ' pop' : '');
         slot.style.setProperty('--rot', (((i * 37) % 9) - 4) + 'deg');
-        slot.textContent = LETTER;
+        fillStamp(slot, conf);
         date.textContent = cli.fechas && cli.fechas[i] ? fmt(cli.fechas[i]) : '';
         slot.setAttribute('aria-label', 'Sello ' + (i + 1) + ' de ' + total);
       } else {
@@ -283,7 +319,7 @@ input[type="text"], input[type="tel"] {
     popFrom = -1;
     var left = total - got, ready = left <= 0;
     $('reward').classList.toggle('ready', ready);
-    $('reward-t').textContent = ready ? '¡Premio listo! ' + REWARD : REWARD;
+    $('reward-t').textContent = ready ? '¡Premio listo! ' + conf.premio : conf.premio;
     $('reward-s').textContent = ready
       ? 'Muéstralo en caja para canjearlo.'
       : (left === 1 ? 'Te falta 1 sello' : 'Te faltan ' + left + ' sellos');
@@ -292,6 +328,7 @@ input[type="text"], input[type="tel"] {
   function refresh(silent) {
     if (!tel || busy) return Promise.resolve();
     return api({ accion: 'consultar', telefono: tel }).then(function (r) {
+      if (r.ok && r.config) applyConfig(r.config);
       if (!r.ok) { if (!silent) say(r.error || 'No se pudo actualizar.'); return; }
       if (!r.cliente) { clearStore(); cli = null; tel = ''; view('form'); return; }
       var antes = cli ? cli.sellos : r.cliente.sellos;
@@ -335,6 +372,7 @@ input[type="text"], input[type="tel"] {
         $('f-send').disabled = false;
         $('f-send').textContent = 'Obtener mi tarjeta';
         if (!r.ok) { err.textContent = r.error || 'No se pudo crear la tarjeta.'; return; }
+        if (r.config) applyConfig(r.config);
         tel = telRaw;
         cli = r.cliente;
         popFrom = r.existente ? -1 : 0;
@@ -375,12 +413,14 @@ input[type="text"], input[type="tel"] {
     return;
   }
   var s = readStore();
+  if (s && s.config) applyConfig(s.config);
   if (s && s.tel) {
     tel = s.tel;
     if (s.cliente) { cli = s.cliente; render(); view('card'); } else { view('load'); }
     refresh(true);
   } else {
     view('form');
+    api({ accion: 'config' }).then(function (r) { if (r && r.ok && r.config) applyConfig(r.config); }, function () {});
   }
 })();
 </script>
