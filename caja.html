@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Caja Mokaapeh</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+/* Pantalla de caja para el celular del negocio: entrar con PIN, buscar al cliente,
+   ver su tarjeta y pulsar un solo botón grande. Mismo sistema visual que la tarjeta del cliente. */
+:root {
+  --font-display: 'Bricolage Grotesque', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, Menlo, Consolas, monospace;
+  --bg: #EDEFF3;
+  --fg: #141824;
+  --muted: #586072;
+  --panel: #FFFFFF;
+  --line: #D3D8E1;
+  --card: #172033;
+  --card-fg: #F3F5F9;
+  --card-muted: #A3AEC4;
+  --slot-line: #43557A;
+  --ink: #172033;
+  --stamp: #F5B335;
+  --danger: #B3261E;
+  --ok: #1B6B3A;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1017; --fg: #E9ECF2; --muted: #9AA3B5; --panel: #151A24; --line: #272E3C;
+    --card: #1C2840; --card-fg: #F3F5F9; --card-muted: #A9B4CA; --slot-line: #4A5C84; --ink: #172033;
+    --danger: #FF8A80; --ok: #7DDBA0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1017; --fg: #E9ECF2; --muted: #9AA3B5; --panel: #151A24; --line: #272E3C;
+  --card: #1C2840; --card-fg: #F3F5F9; --card-muted: #A9B4CA; --slot-line: #4A5C84; --ink: #172033;
+  --danger: #FF8A80; --ok: #7DDBA0;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 460px; margin: 0 auto; display: grid; gap: 16px; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.eyebrow { font: 500 11px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+.btn {
+  font: 700 16px var(--font-body);
+  min-height: 52px; padding: 0 18px; border-radius: 14px; border: 1.5px solid transparent; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box;
+}
+.btn-primary { background: var(--stamp); color: var(--ink); }
+.btn-primary:hover { filter: brightness(.96); }
+.btn-secondary { background: transparent; border-color: var(--line); color: var(--fg); }
+.btn-secondary:hover { border-color: var(--muted); }
+.btn-small { min-height: 40px; width: auto; padding: 0 14px; font-size: 14px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn:focus-visible, input:focus-visible, .result:focus-visible { outline: 3px solid var(--fg); outline-offset: 2px; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 18px; display: grid; gap: 16px; }
+.panel h1 { margin: 0; font: 800 26px/1.1 var(--font-display); letter-spacing: -.01em; }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field label { font: 500 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+input[type="text"], input[type="password"], input[type="search"] {
+  font: 400 18px var(--font-body);
+  min-height: 52px; width: 100%; box-sizing: border-box;
+  border: 1.5px solid var(--line); border-radius: 10px; padding: 0 12px;
+  background: var(--bg); color: var(--fg);
+}
+.err { margin: 0; min-height: 1.2em; font-size: 14px; color: var(--danger); }
+.hint { margin: 0; font-size: 13px; color: var(--muted); }
+
+.results { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.result {
+  width: 100%; text-align: left; display: grid; gap: 2px; box-sizing: border-box;
+  background: var(--panel); border: 1.5px solid var(--line); border-radius: 14px;
+  padding: 12px 14px; min-height: 56px; cursor: pointer; color: var(--fg); font: inherit;
+}
+.result:hover { border-color: var(--muted); }
+.result b { font-size: 17px; overflow-wrap: anywhere; }
+.result span { font-size: 13px; color: var(--muted); }
+
+.card { background: var(--card); color: var(--card-fg); border-radius: 22px; padding: 20px 20px 4px; box-shadow: 0 18px 40px -22px rgba(10, 16, 30, .55); }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.who { margin: 0; font: 800 24px/1.1 var(--font-display); letter-spacing: -.01em; overflow-wrap: anywhere; text-wrap: balance; }
+.tel { margin: 6px 0 0; font: 400 14px var(--font-mono); color: var(--card-muted); }
+.num { font: 400 12px/1.6 var(--font-mono); color: var(--card-muted); white-space: nowrap; }
+.grid { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 12px 8px; margin-top: 16px; }
+.slot { width: 100%; max-width: 56px; justify-self: center; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; }
+.slot.empty { border: 1.5px dashed var(--slot-line); font: 400 13px var(--font-mono); color: var(--card-muted); }
+.slot.filled {
+  background: var(--stamp); color: var(--ink); font: 800 22px/1 var(--font-display);
+  box-shadow: inset 0 0 0 3px var(--stamp), inset 0 0 0 5px rgba(23, 32, 51, .38);
+}
+.resumen { margin: 16px 0 0; padding: 14px 0 16px; border-top: 2px dashed var(--slot-line); display: grid; gap: 2px; }
+.resumen b { font: 700 17px var(--font-body); }
+.resumen span { font-size: 13px; color: var(--card-muted); }
+
+.acciones { display: grid; gap: 10px; }
+.status { min-height: 1.3em; margin: 0; font-size: 15px; font-weight: 700; }
+.status.ok { color: var(--ok); }
+.status.bad { color: var(--danger); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="eyebrow">Caja · Crema Mokaapeh</span>
+    <button class="btn btn-secondary btn-small" id="salir" type="button" hidden>Salir</button>
+  </div>
+
+  <section class="panel" id="a-login">
+    <h1>Entrar a caja</h1>
+    <form id="loginform" novalidate style="display:grid;gap:16px">
+      <div class="field">
+        <label for="a-pin">PIN</label>
+        <input id="a-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="off">
+      </div>
+      <p class="err" id="login-err" role="alert"></p>
+      <button class="btn btn-primary" id="login-btn" type="submit">Entrar</button>
+    </form>
+  </section>
+
+  <section id="a-main" hidden style="display:grid;gap:16px">
+    <div class="field">
+      <label for="q">Teléfono o nombre del cliente</label>
+      <input id="q" type="search" autocomplete="off" placeholder="Ej. 9988 o Marcelo">
+    </div>
+    <p class="hint" id="hint">Escribe al menos 3 letras o números.</p>
+    <ul class="results" id="results"></ul>
+
+    <section id="detail" hidden style="display:grid;gap:16px">
+      <div class="card">
+        <div class="card-head">
+          <div style="min-width:0">
+            <h2 class="who" id="d-nombre"></h2>
+            <p class="tel" id="d-tel"></p>
+          </div>
+          <span class="num" id="d-num"></span>
+        </div>
+        <div class="grid" id="d-grid"></div>
+        <div class="resumen">
+          <b id="d-sellos"></b>
+          <span id="d-ultimo"></span>
+        </div>
+      </div>
+      <div class="acciones">
+        <button class="btn btn-primary" id="b-sellar" type="button">Añadir sello</button>
+        <button class="btn btn-primary" id="b-canjear" type="button" hidden>Canjear premio</button>
+        <button class="btn btn-secondary" id="b-quitar" type="button">Quitar sello</button>
+        <button class="btn btn-secondary" id="b-otro" type="button">Buscar otro cliente</button>
+      </div>
+    </section>
+
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </section>
+</div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  var API = window.MOKAAPEH_API || '';
+  var SKEY = 'mokaapeh-caja-pin';
+  var pin = '';
+  var sel = null;
+  var busy = false;
+  var seq = 0;
+  var qTimer = null;
+  var statusTimer = null;
+
+  function $(id) { return document.getElementById(id); }
+  function configured() { return /^https:\/\/script\.google\.com\//.test(API); }
+
+  function api(body) {
+    var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 25000);
+    return fetch(API, { method: 'POST', body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { clearTimeout(timer); return j; }, function (e) { clearTimeout(timer); throw e; });
+  }
+
+  function say(m, kind) {
+    var s = $('status');
+    s.textContent = m;
+    s.className = 'status' + (kind ? ' ' + kind : '');
+    clearTimeout(statusTimer);
+    if (m && kind === 'ok') statusTimer = setTimeout(function () { s.textContent = ''; }, 6000);
+  }
+  function telTxt(t) {
+    t = String(t);
+    return t.length === 11 && t.indexOf('504') === 0 ? t.slice(3, 7) + ' ' + t.slice(7) : '+' + t;
+  }
+  function fechaHora(iso) {
+    try {
+      return new Date(iso).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).replace('.', '');
+    } catch (e) { return ''; }
+  }
+  function storePin(v) {
+    try { if (v) sessionStorage.setItem(SKEY, v); else sessionStorage.removeItem(SKEY); } catch (e) {}
+  }
+
+  function showMain(on) {
+    $('a-login').hidden = on;
+    $('a-main').hidden = !on;
+    $('salir').hidden = !on;
+  }
+  function logout(msg) {
+    pin = ''; sel = null; storePin('');
+    $('a-pin').value = '';
+    $('login-err').textContent = msg || '';
+    $('results').textContent = '';
+    $('q').value = '';
+    $('detail').hidden = true;
+    say('');
+    showMain(false);
+  }
+
+  function renderDetail() {
+    var c = sel, total = c.total || 6;
+    $('d-nombre').textContent = c.nombre + ' ' + c.apellido;
+    $('d-tel').textContent = telTxt(c.telefono);
+    $('d-num').textContent = 'N.º ' + c.numero;
+    var grid = $('d-grid');
+    grid.style.setProperty('--cols', total <= 6 ? 3 : total <= 8 ? 4 : total <= 10 ? 5 : 6);
+    grid.textContent = '';
+    for (var i = 0; i < total; i++) {
+      var slot = document.createElement('div');
+      if (i < c.sellos) { slot.className = 'slot filled'; slot.textContent = 'M'; }
+      else { slot.className = 'slot empty'; slot.textContent = String(i + 1); }
+      grid.appendChild(slot);
+    }
+    var completa = c.sellos >= total;
+    $('d-sellos').textContent = c.sellos + ' de ' + total + ' sellos' + (c.canjeados ? ' · ' + c.canjeados + (c.canjeados === 1 ? ' premio canjeado' : ' premios canjeados') : '');
+    var ult = c.fechas && c.fechas.length ? c.fechas[c.fechas.length - 1] : '';
+    $('d-ultimo').textContent = ult ? 'Último sello: ' + fechaHora(ult) : 'Todavía sin sellos';
+    $('b-sellar').hidden = completa;
+    $('b-canjear').hidden = !completa;
+    $('b-quitar').disabled = c.sellos === 0;
+    $('detail').hidden = false;
+  }
+
+  function setBusy(on) {
+    busy = on;
+    ['b-sellar', 'b-canjear', 'b-quitar', 'b-otro'].forEach(function (id) { $(id).disabled = on || (id === 'b-quitar' && sel && sel.sellos === 0); });
+  }
+
+  function act(accion, okMsg) {
+    if (busy || !sel) return;
+    setBusy(true);
+    say('Guardando…', '');
+    api({ accion: accion, pin: pin, telefono: sel.telefono }).then(function (r) {
+      setBusy(false);
+      if (!r.ok) {
+        if (r.pinMalo) { logout(r.error); return; }
+        say(r.error || 'No se pudo guardar.', 'bad');
+        renderDetail();
+        return;
+      }
+      sel = r.cliente;
+      renderDetail();
+      say(okMsg(sel), 'ok');
+    }, function () {
+      setBusy(false);
+      renderDetail();
+      say('Sin conexión. No se guardó, inténtalo de nuevo.', 'bad');
+    });
+  }
+
+  function buscar() {
+    var q = $('q').value.trim();
+    var mine = ++seq;
+    if (q.length < 3) { $('results').textContent = ''; $('hint').textContent = 'Escribe al menos 3 letras o números.'; return; }
+    $('hint').textContent = 'Buscando…';
+    api({ accion: 'buscar', pin: pin, q: q }).then(function (r) {
+      if (mine !== seq) return;
+      if (!r.ok) {
+        if (r.pinMalo) { logout(r.error); return; }
+        $('hint').textContent = r.error || 'No se pudo buscar.';
+        return;
+      }
+      var ul = $('results');
+      ul.textContent = '';
+      $('hint').textContent = r.clientes.length ? '' : 'No hay clientes con ese dato.';
+      r.clientes.forEach(function (c) {
+        var li = document.createElement('li');
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'result';
+        var n = document.createElement('b');
+        n.textContent = c.nombre + ' ' + c.apellido;
+        var s = document.createElement('span');
+        s.textContent = telTxt(c.telefono) + ' · ' + c.sellos + ' de ' + (c.total || 6) + ' sellos';
+        b.appendChild(n);
+        b.appendChild(s);
+        b.addEventListener('click', function () {
+          sel = c;
+          $('results').textContent = '';
+          $('hint').textContent = '';
+          say('');
+          renderDetail();
+          setBusy(false);
+        });
+        li.appendChild(b);
+        ul.appendChild(li);
+      });
+    }, function () {
+      if (mine !== seq) return;
+      $('hint').textContent = 'Sin conexión. Inténtalo de nuevo.';
+    });
+  }
+
+  $('q').addEventListener('input', function () {
+    clearTimeout(qTimer);
+    qTimer = setTimeout(buscar, 400);
+  });
+
+  $('loginform').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (busy) return;
+    var v = $('a-pin').value.trim();
+    if (!v) { $('login-err').textContent = 'Escribe el PIN.'; return; }
+    busy = true;
+    $('login-btn').disabled = true;
+    $('login-err').textContent = '';
+    api({ accion: 'verificar', pin: v }).then(function (r) {
+      busy = false;
+      $('login-btn').disabled = false;
+      if (!r.ok) { $('login-err').textContent = r.error || 'No se pudo entrar.'; $('a-pin').value = ''; return; }
+      pin = v;
+      storePin(v);
+      $('a-pin').value = '';
+      showMain(true);
+      $('q').focus();
+    }, function () {
+      busy = false;
+      $('login-btn').disabled = false;
+      $('login-err').textContent = 'No hay conexión. Inténtalo de nuevo.';
+    });
+  });
+
+  $('b-sellar').addEventListener('click', function () {
+    act('sellar', function (c) { return c.sellos >= c.total ? 'Sello añadido. ¡Tarjeta completa! Ya puede canjear el premio.' : 'Sello añadido. Lleva ' + c.sellos + ' de ' + c.total + '.'; });
+  });
+  $('b-quitar').addEventListener('click', function () {
+    act('quitar', function (c) { return 'Sello quitado. Lleva ' + c.sellos + ' de ' + c.total + '.'; });
+  });
+  $('b-canjear').addEventListener('click', function () {
+    act('canjear', function () { return 'Premio canjeado. La tarjeta quedó en cero.'; });
+  });
+  $('b-otro').addEventListener('click', function () {
+    sel = null;
+    $('detail').hidden = true;
+    say('');
+    $('q').value = '';
+    $('q').focus();
+    $('hint').textContent = 'Escribe al menos 3 letras o números.';
+  });
+  $('salir').addEventListener('click', function () { logout(''); });
+
+  if (!configured()) {
+    $('login-err').textContent = 'Falta conectar con Google. Revisa el archivo config.js.';
+    $('login-btn').disabled = true;
+    return;
+  }
+  var saved = '';
+  try { saved = sessionStorage.getItem(SKEY) || ''; } catch (e) {}
+  if (saved) {
+    api({ accion: 'verificar', pin: saved }).then(function (r) {
+      if (r.ok) { pin = saved; showMain(true); } else { storePin(''); }
+    }, function () {});
+  }
+})();
+</script>
+</body>
+</html>
