@@ -134,6 +134,22 @@ input[type="text"], input[type="password"], input[type="search"], select {
 .iconopt:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
 .sep { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
 .card .grid { padding-bottom: 4px; }
+.tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tools .btn { min-height: 56px; font-size: 14px; line-height: 1.2; text-align: center; padding: 0 10px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pair .btn { min-height: 64px; line-height: 1.2; text-align: center; flex-direction: column; gap: 2px; }
+.pair .btn small { font: 500 12px var(--font-mono); opacity: .8; }
+.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.item { border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 4px; background: var(--bg); }
+.item b { font-size: 17px; overflow-wrap: anywhere; }
+.item span { font-size: 13px; color: var(--muted); }
+.item a.btn { text-decoration: none; margin-top: 8px; min-height: 46px; font-size: 15px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat { border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--bg); display: grid; gap: 2px; }
+.stat b { font: 800 28px/1.1 var(--font-display); }
+.stat span { font-size: 13px; color: var(--muted); }
+.sub { margin: 0; font: 500 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.row2 { display: grid; grid-template-columns: 1fr 96px; gap: 10px; align-items: end; }
 </style>
 </head>
 <body>
@@ -166,6 +182,11 @@ input[type="text"], input[type="password"], input[type="search"], select {
     <p class="hint" id="hint">Escribe al menos 3 letras o números.</p>
     <ul class="results" id="results"></ul>
 
+    <div class="tools" id="tools">
+      <button class="btn btn-secondary" id="t-inact" type="button">Clientes que no han vuelto</button>
+      <button class="btn btn-secondary" id="t-resumen" type="button">Resumen del negocio</button>
+    </div>
+
     <section id="detail" hidden style="display:grid;gap:16px">
       <div class="card">
         <div class="card-head">
@@ -182,7 +203,10 @@ input[type="text"], input[type="password"], input[type="search"], select {
         </div>
       </div>
       <div class="acciones">
-        <button class="btn btn-primary" id="b-sellar" type="button">Añadir sello</button>
+        <div class="pair" id="b-pair">
+          <button class="btn btn-primary" id="b-s1" type="button"></button>
+          <button class="btn btn-primary" id="b-s2" type="button"></button>
+        </div>
         <button class="btn btn-primary" id="b-canjear" type="button" hidden>Canjear premio</button>
         <button class="btn btn-secondary" id="b-quitar" type="button">Quitar sello</button>
         <button class="btn btn-secondary" id="b-editar" type="button">Corregir datos del cliente</button>
@@ -235,6 +259,27 @@ input[type="text"], input[type="password"], input[type="search"], select {
         <label for="s-total">Sellos para el premio</label>
         <select id="s-total"></select>
       </div>
+      <p class="sub">Sellos por compra</p>
+      <div class="row2">
+        <div class="field">
+          <label for="s-n1">Producto 1</label>
+          <input id="s-n1" type="text" maxlength="20" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="s-v1">Sellos</label>
+          <select id="s-v1"></select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="s-n2">Producto 2</label>
+          <input id="s-n2" type="text" maxlength="20" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="s-v2">Sellos</label>
+          <select id="s-v2"></select>
+        </div>
+      </div>
       <div class="field">
         <span class="legend" id="lg-color">Color de los sellos</span>
         <div class="swatches" id="s-colores" role="group" aria-labelledby="lg-color"></div>
@@ -267,6 +312,52 @@ input[type="text"], input[type="password"], input[type="search"], select {
       <button class="btn btn-secondary" id="s-pin-btn" type="button">Cambiar PIN</button>
     </div>
   </section>
+
+  <section id="a-inact" hidden style="display:grid;gap:16px">
+    <div class="panel">
+      <h2>Clientes que no han vuelto</h2>
+      <div class="field">
+        <label for="i-dias">Sin comprar desde hace</label>
+        <select id="i-dias">
+          <option value="15">15 días o más</option>
+          <option value="30" selected>30 días o más</option>
+          <option value="60">60 días o más</option>
+          <option value="90">90 días o más</option>
+        </select>
+      </div>
+      <p class="hint" id="i-hint"></p>
+      <ul class="lista" id="i-lista"></ul>
+      <button class="btn btn-secondary" id="i-volver" type="button">Volver</button>
+    </div>
+  </section>
+
+  <section id="a-resumen" hidden style="display:grid;gap:16px">
+    <div class="panel">
+      <h2>Resumen del negocio</h2>
+      <p class="hint" id="r-hint"></p>
+      <p class="sub">Este mes</p>
+      <div class="stats">
+        <div class="stat"><b id="r-sellos">–</b><span>sellos dados</span></div>
+        <div class="stat"><b id="r-premios">–</b><span>premios canjeados</span></div>
+        <div class="stat"><b id="r-cortesias">–</b><span>clientes nuevos con cortesía</span></div>
+        <div class="stat"><b id="r-activos">–</b><span>clientes activos (30 días)</span></div>
+      </div>
+      <p class="sub">En total</p>
+      <div class="stats">
+        <div class="stat"><b id="r-clientes">–</b><span>clientes registrados</span></div>
+        <div class="stat"><b id="r-wa">–</b><span>aceptan WhatsApp</span></div>
+        <div class="stat"><b id="r-nuevos">–</b><span>nuevos en 30 días</span></div>
+        <div class="stat"><b id="r-total-premios">–</b><span>premios entregados</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Copia de seguridad</h2>
+      <p class="hint" id="r-copia">Se guarda una copia automática cada lunes en tu Drive.</p>
+      <p class="err" id="r-copia-err" role="alert"></p>
+      <button class="btn btn-primary" id="r-copia-btn" type="button">Hacer copia ahora</button>
+      <button class="btn btn-secondary" id="r-volver" type="button">Volver</button>
+    </div>
+  </section>
 </div>
 
 <script src="config.js"></script>
@@ -280,7 +371,8 @@ input[type="text"], input[type="password"], input[type="search"], select {
   var seq = 0;
   var qTimer = null;
   var statusTimer = null;
-  var conf = { negocio: 'Crema Mokaapeh', premio: '1 crema de 15 onzas', total: 6, color: '#F5B335', tema: 'azul', icono: 'inicial', letra: 'M' };
+  var conf = { negocio: 'Crema Mokaapeh', premio: '1 crema de 15 onzas', total: 6, color: '#F5B335', tema: 'azul', icono: 'inicial', letra: 'M', n1: 'Bote de 9 oz', v1: 1, n2: 'Bote de 15 oz', v2: 2 };
+  var PANELS = ['a-main', 'a-ajustes', 'a-inact', 'a-resumen'];
   var SV = '<svg viewBox="0 0 24 24" width="58%" height="58%" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
   var ICONS = {
     grano: SV + '<ellipse cx="12" cy="12" rx="6.3" ry="9" transform="rotate(35 12 12)"/><path d="M16.9 5.2c-3.3 2.5-.5 5.2-2.7 7.3-1.7 1.6-2.6 3.1-1.6 6.2"/></svg>',
@@ -342,8 +434,12 @@ input[type="text"], input[type="password"], input[type="search"], select {
     $('a-main').hidden = !on;
     $('salir').hidden = !on;
     $('ajustes-btn').hidden = !on;
-    if (!on) { $('a-ajustes').hidden = true; $('editform').hidden = true; }
+    if (!on) { ['a-ajustes', 'a-inact', 'a-resumen'].forEach(function (id) { $(id).hidden = true; }); $('editform').hidden = true; }
     if (on) loadConf();
+  }
+  function showPanel(name) {
+    PANELS.forEach(function (id) { $(id).hidden = id !== 'a-' + name; });
+    try { window.scrollTo(0, 0); } catch (e) {}
   }
   function logout(msg) {
     pin = ''; sel = null; storePin('');
@@ -374,7 +470,18 @@ input[type="text"], input[type="password"], input[type="search"], select {
     $('d-sellos').textContent = c.sellos + ' de ' + total + ' sellos' + (c.canjeados ? ' · ' + c.canjeados + (c.canjeados === 1 ? ' premio canjeado' : ' premios canjeados') : '');
     var ult = c.fechas && c.fechas.length ? c.fechas[c.fechas.length - 1] : '';
     $('d-ultimo').textContent = ult ? 'Último sello: ' + fechaHora(ult) : 'Todavía sin sellos';
-    $('b-sellar').hidden = completa;
+    $('b-s1').textContent = '';
+    $('b-s2').textContent = '';
+    [['b-s1', conf.n1, conf.v1], ['b-s2', conf.n2, conf.v2]].forEach(function (p) {
+      var b = $(p[0]);
+      var t = document.createElement('span');
+      t.textContent = p[1];
+      var s = document.createElement('small');
+      s.textContent = '+' + p[2] + (Number(p[2]) === 1 ? ' sello' : ' sellos');
+      b.appendChild(t);
+      b.appendChild(s);
+    });
+    $('b-pair').hidden = completa;
     $('b-canjear').hidden = !completa;
     $('b-quitar').disabled = c.sellos === 0;
     $('editform').hidden = true;
@@ -383,14 +490,16 @@ input[type="text"], input[type="password"], input[type="search"], select {
 
   function setBusy(on) {
     busy = on;
-    ['b-sellar', 'b-canjear', 'b-quitar', 'b-editar', 'b-otro'].forEach(function (id) { $(id).disabled = on || (id === 'b-quitar' && sel && sel.sellos === 0); });
+    ['b-s1', 'b-s2', 'b-canjear', 'b-quitar', 'b-editar', 'b-otro'].forEach(function (id) { $(id).disabled = on || (id === 'b-quitar' && sel && sel.sellos === 0); });
   }
 
-  function act(accion, okMsg) {
+  function act(accion, okMsg, extra) {
     if (busy || !sel) return;
     setBusy(true);
     say('Guardando…', '');
-    api({ accion: accion, pin: pin, telefono: sel.telefono }).then(function (r) {
+    var body = { accion: accion, pin: pin, telefono: sel.telefono };
+    if (extra) Object.keys(extra).forEach(function (k) { body[k] = extra[k]; });
+    api(body).then(function (r) {
       setBusy(false);
       if (!r.ok) {
         if (r.pinMalo) { logout(r.error); return; }
@@ -400,7 +509,7 @@ input[type="text"], input[type="password"], input[type="search"], select {
       }
       sel = r.cliente;
       renderDetail();
-      say(okMsg(sel), 'ok');
+      say(okMsg(sel, r), 'ok');
     }, function () {
       setBusy(false);
       renderDetail();
@@ -480,9 +589,14 @@ input[type="text"], input[type="password"], input[type="search"], select {
     });
   });
 
-  $('b-sellar').addEventListener('click', function () {
-    act('sellar', function (c) { return c.sellos >= c.total ? 'Sello añadido. ¡Tarjeta completa! Ya puede canjear el premio.' : 'Sello añadido. Lleva ' + c.sellos + ' de ' + c.total + '.'; });
-  });
+  function msgSello(c, r) {
+    var n = r && r.agregados ? r.agregados : 1;
+    var m = n === 1 ? 'Sello añadido.' : n + ' sellos añadidos.';
+    if (r && r.pedido && r.pedido > n) m += ' La tarjeta se completó; ' + (r.pedido - n) + (r.pedido - n === 1 ? ' sello de más no se pasa' : ' sellos de más no se pasan') + ' a la tarjeta siguiente.';
+    return m + (c.sellos >= c.total ? ' ¡Tarjeta completa! Ya puede canjear el premio.' : ' Lleva ' + c.sellos + ' de ' + c.total + '.');
+  }
+  $('b-s1').addEventListener('click', function () { act('sellar', msgSello, { cantidad: conf.v1 }); });
+  $('b-s2').addEventListener('click', function () { act('sellar', msgSello, { cantidad: conf.v2 }); });
   $('b-quitar').addEventListener('click', function () {
     act('quitar', function (c) { return 'Sello quitado. Lleva ' + c.sellos + ' de ' + c.total + '.'; });
   });
@@ -513,7 +627,7 @@ input[type="text"], input[type="password"], input[type="search"], select {
   function loadConf() {
     api({ accion: 'config' }).then(function (r) {
       if (r && r.ok && r.config) {
-        conf = r.config;
+        Object.keys(r.config).forEach(function (k) { conf[k] = r.config[k]; });
         paintRoot();
         if (sel) { sel.total = conf.total; renderDetail(); }
       }
@@ -572,6 +686,19 @@ input[type="text"], input[type="password"], input[type="search"], select {
   }
   function openSettings() {
     draft = { negocio: conf.negocio, premio: conf.premio, total: conf.total, color: conf.color, tema: conf.tema, icono: conf.icono || 'inicial', letra: conf.letra || 'M' };
+    ['s-v1', 's-v2'].forEach(function (id) {
+      var s = $(id);
+      if (!s.children.length) {
+        for (var k = 1; k <= 3; k++) {
+          var op = document.createElement('option');
+          op.value = String(k);
+          op.textContent = String(k);
+          s.appendChild(op);
+        }
+      }
+    });
+    $('s-n1').value = conf.n1; $('s-v1').value = String(conf.v1);
+    $('s-n2').value = conf.n2; $('s-v2').value = String(conf.v2);
     $('s-negocio').value = draft.negocio;
     $('s-premio').value = draft.premio;
     $('s-letra').value = draft.letra;
@@ -592,14 +719,10 @@ input[type="text"], input[type="password"], input[type="search"], select {
     $('s-pin-err').textContent = '';
     $('s-pin-ok').textContent = '';
     $('s-pin').value = '';
-    $('a-main').hidden = true;
-    $('a-ajustes').hidden = false;
+    showPanel('ajustes');
     renderPreview();
   }
-  function closeSettings() {
-    $('a-ajustes').hidden = true;
-    $('a-main').hidden = false;
-  }
+  function closeSettings() { showPanel('main'); }
 
   $('ajustes-btn').addEventListener('click', function () {
     if ($('a-ajustes').hidden) openSettings(); else closeSettings();
@@ -619,10 +742,13 @@ input[type="text"], input[type="password"], input[type="search"], select {
     };
     if (d.negocio.length < 2) { $('s-err').textContent = 'Escribe el nombre del negocio.'; return; }
     if (d.premio.length < 2) { $('s-err').textContent = 'Escribe cuál es el premio.'; return; }
+    var n1 = $('s-n1').value.trim(), n2 = $('s-n2').value.trim();
+    if (n1.length < 2 || n2.length < 2) { $('s-err').textContent = 'Escribe el nombre de los dos productos.'; return; }
     $('s-err').textContent = '';
     busy = true;
     $('s-guardar').disabled = true;
-    api({ accion: 'guardarAjustes', pin: pin, negocio: d.negocio, premio: d.premio, total: d.total, color: draft.color, tema: draft.tema, icono: draft.icono, letra: $('s-letra').value.trim() || conf.letra || 'M' }).then(function (r) {
+    api({ accion: 'guardarAjustes', pin: pin, negocio: d.negocio, premio: d.premio, total: d.total, color: draft.color, tema: draft.tema, icono: draft.icono, letra: $('s-letra').value.trim() || conf.letra || 'M',
+      n1: n1, v1: parseInt($('s-v1').value, 10), n2: n2, v2: parseInt($('s-v2').value, 10) }).then(function (r) {
       busy = false;
       $('s-guardar').disabled = false;
       if (!r.ok) {
@@ -630,7 +756,7 @@ input[type="text"], input[type="password"], input[type="search"], select {
         $('s-err').textContent = r.error || 'No se pudo guardar.';
         return;
       }
-      conf = r.config;
+      Object.keys(r.config).forEach(function (k) { conf[k] = r.config[k]; });
       paintRoot();
       if (sel) sel.total = conf.total;
       closeSettings();
@@ -664,6 +790,115 @@ input[type="text"], input[type="password"], input[type="search"], select {
     }, function () {
       busy = false;
       $('s-pin-err').textContent = 'Sin conexión. Inténtalo de nuevo.';
+    });
+  });
+
+  /* ---------- Clientes que no han vuelto ---------- */
+  var inactSeq = 0;
+  function waLink(c) {
+    var txt = 'Hola ' + c.nombre + ', te escribimos de ' + conf.negocio + '. Hace tiempo que no te vemos y llevas ' + c.sellos + ' de ' + c.total + ' sellos para tu ' + conf.premio + '. ¡Te esperamos!';
+    return 'https://wa.me/' + String(c.telefono).replace(/\D/g, '') + '?text=' + encodeURIComponent(txt);
+  }
+  function loadInact() {
+    var mine = ++inactSeq;
+    $('i-hint').textContent = 'Buscando…';
+    $('i-lista').textContent = '';
+    api({ accion: 'inactivos', pin: pin, dias: parseInt($('i-dias').value, 10) }).then(function (r) {
+      if (mine !== inactSeq) return;
+      if (!r.ok) {
+        if (r.pinMalo) { logout(r.error); return; }
+        $('i-hint').textContent = r.error || 'No se pudo cargar la lista.';
+        return;
+      }
+      var extra = [];
+      if (r.ocultos) extra.push(r.ocultos + ' ya recibieron aviso en los últimos 14 días');
+      if (r.sinPermiso) extra.push(r.sinPermiso + ' no aceptaron WhatsApp');
+      $('i-hint').textContent = (r.total ? r.total + (r.total === 1 ? ' cliente para avisar.' : ' clientes para avisar.') : 'No hay clientes para avisar ahora.') + (extra.length ? ' (' + extra.join('; ') + ')' : '');
+      var ul = $('i-lista');
+      ul.textContent = '';
+      r.clientes.forEach(function (c) {
+        var li = document.createElement('li');
+        li.className = 'item';
+        var n = document.createElement('b');
+        n.textContent = c.nombre + ' ' + c.apellido;
+        var s = document.createElement('span');
+        s.textContent = telTxt(c.telefono) + ' · ' + c.dias + ' días sin venir · ' + c.sellos + ' de ' + c.total + ' sellos';
+        var a = document.createElement('a');
+        a.className = 'btn btn-primary';
+        a.href = waLink(c);
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = 'Escribir por WhatsApp';
+        a.addEventListener('click', function () {
+          api({ accion: 'avisado', pin: pin, telefono: c.telefono }).then(function (x) {
+            if (x && x.ok) { a.textContent = 'Aviso anotado ✓'; a.className = 'btn btn-secondary'; }
+          }, function () {});
+        });
+        li.appendChild(n); li.appendChild(s); li.appendChild(a);
+        ul.appendChild(li);
+      });
+    }, function () {
+      if (mine !== inactSeq) return;
+      $('i-hint').textContent = 'Sin conexión. Inténtalo de nuevo.';
+    });
+  }
+  $('t-inact').addEventListener('click', function () { showPanel('inact'); loadInact(); });
+  $('i-dias').addEventListener('change', loadInact);
+  $('i-volver').addEventListener('click', function () { showPanel('main'); });
+
+  /* ---------- Resumen y copia de seguridad ---------- */
+  function copiaTxt(iso) {
+    if (!iso) return 'Todavía no hay copias. Pulsa el botón para hacer la primera.';
+    var f = fechaHora(iso);
+    return 'Última copia: ' + (f || iso) + '. Se guarda una automática cada lunes en tu Drive.';
+  }
+  function loadResumen() {
+    $('r-hint').textContent = 'Cargando…';
+    $('r-copia-err').textContent = '';
+    api({ accion: 'resumen', pin: pin }).then(function (r) {
+      if (!r.ok) {
+        if (r.pinMalo) { logout(r.error); return; }
+        $('r-hint').textContent = r.error || 'No se pudo cargar el resumen.';
+        return;
+      }
+      var x = r.resumen;
+      $('r-hint').textContent = '';
+      $('r-sellos').textContent = x.sellosMes;
+      $('r-premios').textContent = x.premiosMes;
+      $('r-cortesias').textContent = x.cortesiasMes;
+      $('r-activos').textContent = x.activos30;
+      $('r-clientes').textContent = x.clientes;
+      $('r-wa').textContent = x.conWhatsApp;
+      $('r-nuevos').textContent = x.nuevos30;
+      $('r-total-premios').textContent = x.premiosTotal;
+      $('r-copia').textContent = copiaTxt(x.ultimaCopia);
+    }, function () {
+      $('r-hint').textContent = 'Sin conexión. Inténtalo de nuevo.';
+    });
+  }
+  $('t-resumen').addEventListener('click', function () { showPanel('resumen'); loadResumen(); });
+  $('r-volver').addEventListener('click', function () { showPanel('main'); });
+  $('r-copia-btn').addEventListener('click', function () {
+    if (busy) return;
+    busy = true;
+    $('r-copia-btn').disabled = true;
+    $('r-copia-err').textContent = '';
+    $('r-copia').textContent = 'Haciendo la copia…';
+    api({ accion: 'copia', pin: pin }).then(function (r) {
+      busy = false;
+      $('r-copia-btn').disabled = false;
+      if (!r.ok) {
+        if (r.pinMalo) { logout(r.error); return; }
+        $('r-copia-err').textContent = r.error || 'No se pudo hacer la copia.';
+        $('r-copia').textContent = '';
+        return;
+      }
+      $('r-copia').textContent = copiaTxt(r.ultimaCopia);
+    }, function () {
+      busy = false;
+      $('r-copia-btn').disabled = false;
+      $('r-copia').textContent = '';
+      $('r-copia-err').textContent = 'Sin conexión. Inténtalo de nuevo.';
     });
   });
 
